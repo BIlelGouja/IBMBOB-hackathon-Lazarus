@@ -79,16 +79,16 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "Tu es IBM Bob, un orchestrateur multi-agent senior specialise en audit de bases de code legacy multi-langage. Tu sais analyser JavaScript, TypeScript, Python, Java, PHP, Ruby, Go, C#, SQL, shell et tout autre langage backend. Lis tous les fichiers fournis, detecte les failles, explique chaque correction par rubrique cliquable, puis propose une version modernisee et securisee. Donne une notation des failles riskScore de 0 a 10, ou 10 signifie critique. Important: dans backendCode et dans reviewSections[].after, retourne uniquement du code propre pret a telecharger, sans commentaires explicatifs, sans bannieres, sans texte d'audit dans le code. Reponds uniquement en JSON valide avec ces cles: securityAudit, migrationSql, oldCode, backendCode, rawAuditLog, riskScore, reviewSections. reviewSections doit etre un tableau d'objets {id,title,fileName,summary,changed,verified,before,after}.",
+              "You are IBM Bob, a senior multi-agent orchestrator specialized in auditing multi-language legacy codebases. You can analyze JavaScript, TypeScript, Python, Java, PHP, Ruby, Go, C#, SQL, shell, and any backend language. Read every provided file, detect vulnerabilities, explain each correction as a clickable review section, then propose a modernized and secure version. Return a riskScore from 0 to 10, where 10 is critical. Important: in backendCode and reviewSections[].after, return only clean code ready to download, with no explanatory comments, no banners, and no audit prose inside code. Reply only with valid JSON using these keys: securityAudit, migrationSql, oldCode, backendCode, rawAuditLog, riskScore, reviewSections. reviewSections must be an array of {id,title,fileName,summary,changed,verified,before,after}.",
           },
           {
             role: "user",
-            content: `Analyse cette base de code, meme si elle est volumineuse, et produis le rapport multi-agent complet.
-Langage declare: ${language}
-Nom du fichier: ${fileName}
-PR URL optionnelle: ${prUrl}
+            content: `Analyze this codebase, even if it is large, and produce the complete multi-agent report.
+Declared language: ${language}
+File name: ${fileName}
+Optional PR URL: ${prUrl}
 
-Base de code a analyser:
+Codebase to analyze:
 ${serializeCodebaseForPrompt(codebase)}`,
           },
         ],
@@ -283,10 +283,10 @@ function buildLanguageAwareFix(file: CodebaseFile, preferredTypeScriptFix?: stri
   }
 
   if (/ruby|\.rb$/.test(language)) {
-    return `# Correctif IBM Bob pour ${file.name}
-# - Suppression des chaînes SQL interpolées
-# - Suppression de eval/send dynamique
-# - Validation des entrées avant ActiveRecord
+    return `# IBM Bob fix for ${file.name}
+# - Remove interpolated SQL strings
+# - Remove dynamic eval/send calls
+# - Validate inputs before ActiveRecord
 
 class FinancialReportController < ApplicationController
   def show
@@ -313,9 +313,9 @@ end`;
   }
 
   if (/python|\.py$/.test(language)) {
-    return `# Correctif IBM Bob pour ${file.name}
-# - Requête paramétrée
-# - Validation simple des paramètres
+    return `# IBM Bob fix for ${file.name}
+# - Parameterized query
+# - Simple parameter validation
 # - Gestion propre de connexion
 
 import re
@@ -342,10 +342,10 @@ def reports():
 
   if (/php|\.php$/.test(language)) {
     return `<?php
-// Correctif IBM Bob pour ${file.name}
+// IBM Bob fix for ${file.name}
 // - PDO prepare/execute
-// - Validation filter_input
-// - Réponse JSON stable
+// - filter_input validation
+// - Stable JSON response
 
 $userId = filter_input(INPUT_GET, 'user_id', FILTER_VALIDATE_INT);
 
@@ -372,10 +372,10 @@ echo json_encode([
   }
 
   if (/c#|csharp|\.cs$/.test(language)) {
-    return `// Correctif IBM Bob pour ${file.name}
-// - SqlCommand paramétré
-// - Validation d'entrée
-// - using pour libérer les ressources
+    return `// IBM Bob fix for ${file.name}
+// - Parameterized SqlCommand
+// - Input validation
+// - using blocks to release resources
 
 using Microsoft.Data.SqlClient;
 using System.Text.RegularExpressions;
@@ -405,9 +405,9 @@ public async Task<IResult> GetCustomer(string email, IConfiguration config)
   }
 
   if (/java|\.java$/.test(language)) {
-    return `// Correctif IBM Bob pour ${file.name}
+    return `// IBM Bob fix for ${file.name}
 // - PreparedStatement
-// - Validation d'entrée
+// - Input validation
 // - try-with-resources
 
 public List<Customer> findCustomers(Connection connection, String email) throws SQLException {
@@ -432,10 +432,10 @@ public List<Customer> findCustomers(Connection connection, String email) throws 
   }
 
   if (/go|\.go$/.test(language)) {
-    return `// Correctif IBM Bob pour ${file.name}
-// - QueryContext paramétré
-// - Timeout contextuel
-// - Validation avant accès DB
+    return `// IBM Bob fix for ${file.name}
+// - Parameterized QueryContext
+// - Context timeout
+// - Validation before DB access
 
 func FindCustomer(ctx context.Context, db *sql.DB, email string) ([]Customer, error) {
     if !emailRegex.MatchString(email) {
@@ -468,10 +468,10 @@ func FindCustomer(ctx context.Context, db *sql.DB, email string) ([]Customer, er
   }
 
   if (/sql|\.sql$/.test(language)) {
-    return `-- Correctif IBM Bob pour ${file.name}
--- - Suppression du SQL dynamique concaténé
--- - Procédure paramétrée
--- - Limitation de la surface de lecture
+    return `-- IBM Bob fix for ${file.name}
+-- - Remove concatenated dynamic SQL
+-- - Parameterized procedure
+-- - Limit read surface
 
 CREATE PROCEDURE GetCustomerByEmail
   @Email NVARCHAR(255)
@@ -495,13 +495,13 @@ BEGIN
 END;`;
   }
 
-  return `// Correctif IBM Bob pour ${file.name}
-// Langage: ${file.language}
-// IBM Bob a remplacé la logique dangereuse par ces invariants:
-// 1. Valider toutes les entrées externes.
-// 2. Utiliser des requêtes paramétrées ou une API sûre.
-// 3. Supprimer eval/exec et les appels dynamiques non contrôlés.
-// 4. Ajouter une trace d'audit et des erreurs explicites.
+  return `// IBM Bob fix for ${file.name}
+// Language: ${file.language}
+// IBM Bob replaced dangerous logic with these invariants:
+// 1. Validate all external inputs.
+// 2. Use parameterized queries or a safe API.
+// 3. Remove eval/exec and uncontrolled dynamic calls.
+// 4. Add an audit trail and explicit errors.
 
 function secureBoundary(rawInput) {
   const input = validateInput(rawInput);
@@ -603,18 +603,18 @@ function buildFallbackBobResponse(
   codebase: CodebaseFile[] = [],
 ): BobResponse {
   // 1. Deep Context
-  // IBM Bob reconstruit le contexte de la PR et identifie le flux backend expose.
+  // IBM Bob rebuilds PR context and identifies the exposed backend flow.
   const repositoryContext = {
     prUrl,
     repository: "github.com/fintech-ops/customer-risk-api",
     service: "customer-risk-api",
     runtime: "Next.js 14 Route Handler",
     detectedIntent:
-      "Analyser un code legacy multi-langage et produire une version backend moderne, securisee et auditable.",
+      "Analyze a multi-language legacy codebase and produce a modern, secure, auditable backend version.",
   };
 
   // 2. Database Layer
-  // L'agent base de donnees remplace l'acces SQL brut par un schema Prisma explicite.
+  // The database agent replaces raw SQL access with an explicit Prisma schema.
   const migrationSql = `generator client {
   provider = "prisma-client-js"
 }
@@ -662,12 +662,12 @@ enum CustomerStatus {
 }`;
 
   // 3. Security Injection
-  // L'agent securite injecte la validation Zod avant toute interaction avec la base.
+  // The security agent injects Zod validation before any database interaction.
   const securityAudit =
-    `IBM Bob a analyse ${fileName} en mode ${language}. Une faille d'injection SQL critique a ete trouvee dans l'ancien flux: des donnees utilisateur sont concatenees directement dans une requete base de donnees. La correction recommande une validation stricte des entrees, des requetes parametrees, une couche d'acces aux donnees typee, et une journalisation d'audit. Pour une cible TypeScript, Zod et Prisma sont ajoutes afin de normaliser les payloads et supprimer la construction manuelle de SQL.`;
+    `IBM Bob analyzed ${fileName} in ${language} mode. A critical SQL injection flaw was found in the legacy flow: user data is concatenated directly into a database query. The remediation recommends strict input validation, parameterized queries, a typed data access layer, and audit logging. For a TypeScript target, Zod and Prisma are added to normalize payloads and remove manual SQL construction.`;
 
   // 4. Core Logic Translation
-  // L'agent de traduction migre le code Express obsolete vers TypeScript, Prisma et Zod.
+  // The translation agent migrates obsolete Express code to TypeScript, Prisma, and Zod.
   const defaultOldCode = `const express = require("express");
 const mysql = require("mysql2/promise");
 
@@ -759,14 +759,14 @@ export async function POST(request: Request) {
     id: `fallback-section-${index + 1}`,
     title:
       index === 0
-        ? "Sécurisation des entrées utilisateur"
-        : `Correction du module ${file.name}`,
+        ? "User input hardening"
+        : `Module remediation ${file.name}`,
     fileName: file.name,
-    summary: `IBM Bob a lu ${file.name} (${file.language}) et a repéré une logique legacy avec accès non fiable aux données, exécution dynamique ou validation insuffisante.`,
+    summary: `IBM Bob read ${file.name} (${file.language}) and found legacy logic with unsafe data access, dynamic execution, or insufficient validation.`,
     changed:
-      "La correction remplace la concaténation et les appels dangereux par une version idiomatique du langage: validation, requêtes paramétrées, erreurs contrôlées et audit.",
+      "The fix replaces concatenation and dangerous calls with an idiomatic version for the language: validation, parameterized queries, controlled errors, and audit.",
     verified:
-      "IBM Bob vérifie que les entrées non fiables passent par une validation stricte, que la requête n'utilise plus de concaténation, que les appels dynamiques sont supprimés et que le contrat reste compatible.",
+      "IBM Bob verifies untrusted inputs go through strict validation, the query no longer uses concatenation, dynamic calls are removed, and the contract remains compatible.",
     before: file.code,
     after: expandCorrectedOutput(
       file,
@@ -785,7 +785,7 @@ export async function POST(request: Request) {
   );
 
   // 5. Final Audit
-  // L'agent final consolide les traces et produit un journal realiste du workflow.
+  // The final agent consolidates traces and produces a realistic workflow log.
   const rawAuditLog = `[IBM Bob Multi-Agent Workflow]
 RequestId: bob-run-7f42c91a
 InputPR: ${repositoryContext.prUrl}
@@ -799,33 +799,33 @@ FilesIndexed: ${files.length}
 
 [01: Deep Context]
 Status: completed
-Finding: Code legacy multi-langage detecte dans ${fileName}
+Finding: Multi-language legacy code detected in ${fileName}
 Intent: ${repositoryContext.detectedIntent}
 Confidence: 0.93
 
 [02: Database Layer]
 Status: completed
-Finding: Tables MySQL customers/audit_events mappees vers Customer/AuditEvent
-Decision: Ajouter @unique sur email/externalRef et index composites sur status/riskScore + countryCode/createdAt
-Risk: verifier les doublons email avant migration Prisma
+Finding: MySQL tables customers/audit_events mapped to Customer/AuditEvent
+Decision: Add @unique on email/externalRef and composite indexes on status/riskScore + countryCode/createdAt
+Risk: check duplicate emails before Prisma migration
 
 [03: Security Injection]
 Status: remediated
 Severity: critical
-Finding: Injection SQL possible via req.query.email et req.query.country
+Finding: Possible SQL injection through req.query.email and req.query.country
 ExploitSample: ' OR '1'='1
-Fix: Schema Zod strict + acces Prisma findFirst
+Fix: Schema Zod strict + Prisma findFirst access
 
 [04: Core Logic Translation]
 Status: completed
-From: Node.js Express + mysql2 + SQL concatene
+From: Node.js Express + mysql2 + concatenated SQL
 To: Next.js 14 Route Handler + TypeScript + Prisma + Zod
-BehaviorPreserved: recherche client par email et pays
+BehaviorPreserved: customer lookup by email and country
 
 [05: Final Audit]
 Status: PASS_WITH_FIXES
-ResidualRisk: faible
-RecommendedNextStep: Ajouter tests integration avec payloads SQL malveillants
+ResidualRisk: low
+RecommendedNextStep: Add integration tests with malicious SQL payloads
 AuditConfidence: 0.96`;
 
   return {

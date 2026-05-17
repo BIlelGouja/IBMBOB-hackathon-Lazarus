@@ -50,42 +50,42 @@ type ModalState = {
 };
 
 const launchLogs = [
-  "[Orchestrateur] Indexation de la base de code locale...",
-  "[Bob-Architect] Lecture multi-fichiers et cartographie des dépendances...",
-  "[Bob-SecOps] Analyse des points d'entrée et injections possibles...",
-  "[Bob-Core] Génération des correctifs et vérification finale...",
+  "[Orchestrator] Indexing the local codebase...",
+  "[Bob-Architect] Multi-file scan and dependency mapping...",
+  "[Bob-SecOps] Scanning entry points and possible injections...",
+  "[Bob-Core] Generating fixes and final verification...",
 ];
 
 const journeySteps = [
   {
     id: "context",
     title: "Deep Context",
-    detail: "IBM Bob lit l'arborescence, repère les fichiers actifs et reconstruit l'intention.",
+    detail: "IBM Bob reads the tree, detects active files, and reconstructs intent.",
   },
   {
     id: "database",
     title: "Database Layer",
-    detail: "Il suit les accès DB, les requêtes SQL, les modèles et les dépendances.",
+    detail: "It follows DB access, SQL queries, models, and dependencies.",
   },
   {
     id: "security",
     title: "Security Injection",
-    detail: "Il marque les entrées non fiables, injections, secrets et validations manquantes.",
+    detail: "It marks untrusted inputs, injections, secrets, and missing validation.",
   },
   {
     id: "recode",
     title: "Recode Live",
-    detail: "Il réécrit le code proprement avec validation, séparation des responsabilités et typage.",
+    detail: "It rewrites code with validation, clear responsibility boundaries, and typing.",
   },
   {
     id: "tests",
     title: "Tests & Verify",
-    detail: "Il vérifie le contrat, les cas dangereux et les comportements conservés.",
+    detail: "It verifies the contract, dangerous cases, and preserved behavior.",
   },
   {
     id: "audit",
     title: "Final Audit",
-    detail: "Il produit les preuves, le diff et le journal de session téléchargeable.",
+    detail: "It produces evidence, the diff, and a downloadable session log.",
   },
 ];
 
@@ -139,9 +139,9 @@ export default function Page() {
 
     setLiveCode(selectedSection.after);
     setReplayLogs([
-      `[IBM Bob] Correction prête pour ${selectedSection.fileName}.`,
-      "[IBM Bob] Le panneau Après correction contient le patch complet.",
-      "[IBM Bob] Clique sur Voir IBM Bob coder pour rejouer la génération en direct.",
+      `[IBM Bob] Fix ready for ${selectedSection.fileName}.`,
+      "[IBM Bob] The After panel contains the full patch.",
+      "[IBM Bob] Click Watch IBM Bob code to replay the live generation.",
     ]);
     setActiveJourneyStep("audit");
   }, [selectedSection?.id, isLoading, isReplaying]);
@@ -179,7 +179,7 @@ export default function Page() {
     setReplayLogs([]);
     setIsReplaying(false);
     setTerminalLogs([
-      `[Workspace] ${importedFiles.length} fichier(s) importé(s) dans la base de code.`,
+      `[Workspace] ${importedFiles.length} file(s) imported into the codebase.`,
     ]);
 
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -241,14 +241,14 @@ ${section.after}`,
 
   const openJourneyModal = (section: ReviewSection) => {
     setModal({
-      title: `Chemin IBM Bob - ${section.fileName}`,
+      title: `IBM Bob Path - ${section.fileName}`,
       mode: "text",
       content: [
-        `Lecture: ${section.summary}`,
+        `Read: ${section.summary}`,
         "",
-        `Correction: ${section.changed}`,
+        `Fix: ${section.changed}`,
         "",
-        `Vérification: ${section.verified}`,
+        `Verification: ${section.verified}`,
         "",
         ...journeySteps.map((step, index) => `${index + 1}. ${step.title} - ${step.detail}`),
       ].join("\n"),
@@ -257,7 +257,7 @@ ${section.after}`,
 
   const openCodeModal = (section: ReviewSection) => {
     setModal({
-      title: `Code corrigé - ${section.fileName}`,
+      title: `Corrected Code - ${section.fileName}`,
       mode: "code",
       content: section.after,
     });
@@ -315,7 +315,7 @@ ${section.after}`,
             setLiveRiskScore(data.riskScore ?? 8.2);
             setTerminalLogs((currentLogs) => [
               ...currentLogs,
-              "[Orchestrateur] Correctifs générés, vérifiés et prêts à inspecter.",
+              "[Orchestrator] Fixes generated, verified, and ready to inspect.",
             ]);
             setIsLoading(false);
           }, 900);
@@ -332,31 +332,31 @@ ${section.after}`,
         delay: 250,
         step: "context",
         score: 1.5,
-        log: "[Deep Context] Arborescence chargée, fichiers indexés, entrées publiques détectées.",
+        log: "[Deep Context] Tree loaded, files indexed, public entry points detected.",
       },
       {
         delay: 1050,
         step: "database",
         score: 3.4,
-        log: "[Database Layer] Requêtes et accès aux données suivis fichier par fichier.",
+        log: "[Database Layer] Queries and data access traced file by file.",
       },
       {
         delay: 1850,
         step: "security",
         score: 8.6,
-        log: "[Security Injection] Faille critique probable: entrée utilisateur vers requête non paramétrée.",
+        log: "[Security Injection] Probable critical flaw: user input reaches an unparameterized query.",
       },
       {
         delay: 2550,
         step: "recode",
         score: 8.9,
-        log: "[Recode Live] Début de correction: validation stricte, séparation controller/repository.",
+        log: "[Recode Live] Starting remediation: strict validation, controller/repository split.",
       },
       {
         delay: 4200,
         step: "tests",
         score: 8.1,
-        log: "[Tests] Simulation des payloads malveillants et vérification du contrat de sortie.",
+        log: "[Tests] Simulating malicious payloads and verifying the output contract.",
       },
     ];
 
@@ -386,10 +386,10 @@ ${section.after}`,
     }
 
     const steps = [
-      "Deep Context: lecture du fichier, extraction des entrées utilisateur et dépendances.",
-      "Security Injection: repérage des données non fiables et des appels dangereux.",
-      "Core Translation: écriture du correctif propre et maintenable.",
-      "Verification: contrôle du contrat de sortie, des validations et des accès paramétrés.",
+      "Deep Context: reading the file, extracting user inputs and dependencies.",
+      "Security Injection: locating untrusted data and dangerous calls.",
+      "Core Translation: writing a clean and maintainable fix.",
+      "Verification: checking output contract, validation, and parameterized access.",
     ];
     const targetCode = section.after;
     const chunkSize = Math.max(18, Math.ceil(targetCode.length / 90));
@@ -417,8 +417,8 @@ ${section.after}`,
         setActiveJourneyStep("audit");
         setReplayLogs((logs) => [
           ...logs,
-          "[IBM Bob] Tests simulés: validation input OK, requêtes paramétrées OK, audit trail OK.",
-          "[IBM Bob] Correctif final prêt pour revue.",
+          "[IBM Bob] Simulated tests: input validation OK, parameterized queries OK, audit trail OK.",
+          "[IBM Bob] Final fix ready for review.",
         ]);
         setIsReplaying(false);
       }
@@ -486,13 +486,13 @@ ${section.after}`,
                 <section style={questionnaireShellStyle}>
                   <div style={boardTopbarStyle}>
                     <div style={boardTitleGroupStyle}>
-                      <button style={roundIconButtonStyle} aria-label="Retour">
+                      <button style={roundIconButtonStyle} aria-label="Back">
                         ‹
                       </button>
                       <div>
-                        <strong>Audit de code IBM Bob</strong>
+                        <strong>IBM Bob Code Audit</strong>
                         <p style={boardSubtitleStyle}>
-                          Importez une base de code. Bob détecte les failles, corrige et prépare les téléchargements.
+                          Import a codebase. Bob detects vulnerabilities, applies fixes, and prepares downloads.
                         </p>
                       </div>
                     </div>
@@ -502,14 +502,14 @@ ${section.after}`,
                         style={pillButtonStyle}
                       >
                         <Upload size={14} />
-                        Importer des fichiers
+                        Import files
                       </button>
                       <button
                         onClick={() => folderInputRef.current?.click()}
                         style={pillButtonStyle}
                       >
                         <Folder size={14} />
-                        Importer un dossier
+                        Import folder
                       </button>
                     </div>
                   </div>
@@ -517,7 +517,7 @@ ${section.after}`,
                   {codeFiles.length > 0 ? (
                     <>
                       <div style={progressShellStyle}>
-                        <span>{completionPercent}% prêt</span>
+                        <span>{completionPercent}% ready</span>
                         <div style={progressTrackStyle}>
                           <div
                             style={{
@@ -544,14 +544,14 @@ ${section.after}`,
                             >
                               <div style={cardHeaderLineStyle}>
                                 <span style={statusDotStyle}>✓</span>
-                                <span>Fichier {index + 1}</span>
+                                <span>File {index + 1}</span>
                                 <span style={cardTagStyle}>{file.language}</span>
                               </div>
                               <strong>{getBaseName(file.name)}</strong>
                               <p style={cardTextStyle}>
                                 {file.code.split("\n").length} lignes · Bob va chercher injections, secrets et appels dangereux
                               </p>
-                              <span style={cardLinkStyle}>Sélectionner</span>
+                              <span style={cardLinkStyle}>Select</span>
                             </button>
                           ))}
                         </div>
@@ -559,15 +559,15 @@ ${section.after}`,
                         <div style={aiBreakdownCardStyle}>
                           <div style={cardHeaderLineStyle}>
                             <span style={statusDotStyle}>✦</span>
-                            <strong>Ce que Bob va faire</strong>
+                            <strong>What Bob will do</strong>
                           </div>
                           <p style={cardTextStyle}>
-                            Bob lit toute la base, explique les failles, réécrit le code et génère les fichiers corrigés.
+                            Bob reads the full codebase, explains vulnerabilities, rewrites code, and generates corrected files.
                           </p>
                           {[
-                            "1. Lire tous les fichiers importés",
-                            "2. Noter les failles de 0 à 10",
-                            "3. Télécharger chaque fichier corrigé",
+                            "1. Read every imported file",
+                            "2. Score vulnerabilities from 0 to 10",
+                            "3. Download each corrected file",
                           ].map((item) => (
                             <div key={item} style={breakdownItemStyle}>
                               {item}
@@ -587,7 +587,7 @@ ${section.after}`,
                             }}
                           >
                             <Play size={16} fill="currentColor" />
-                            Lancer l’analyse IBM Bob
+                            Run IBM Bob analysis
                           </button>
                         </div>
                       </div>
@@ -597,9 +597,9 @@ ${section.after}`,
                       <div style={emptyIconStyle}>
                         <Upload size={22} />
                       </div>
-                      <strong>Aucun fichier importé</strong>
+                      <strong>No files imported</strong>
                       <p>
-                        Commence par importer des fichiers ou un dossier. Rien n’est analysé tant que ta base de code est vide.
+                        Start by importing files or a folder. Nothing is analyzed while the codebase is empty.
                       </p>
                       <div style={emptyActionsStyle}>
                         <button
@@ -607,14 +607,14 @@ ${section.after}`,
                           style={replayButtonStyle}
                         >
                           <Upload size={15} />
-                          Importer des fichiers
+                          Import files
                         </button>
                         <button
                           onClick={() => folderInputRef.current?.click()}
                           style={quietButtonStyle}
                         >
                           <Folder size={15} />
-                          Importer un dossier
+                          Import folder
                         </button>
                       </div>
                     </div>
@@ -627,14 +627,14 @@ ${section.after}`,
               <div style={liveAnalysisDashboardStyle}>
                 <div style={liveAnalysisHeaderStyle}>
                   <div>
-                    <div style={liveAnalysisEyebrowStyle}>IBM Bob travaille en direct</div>
+                    <div style={liveAnalysisEyebrowStyle}>IBM Bob is working live</div>
                     <h1 style={liveAnalysisTitleStyle}>
-                      Lecture, correction et vérification de la base
+                      Codebase read, remediation, and verification
                     </h1>
                   </div>
                   <div style={scoreGaugeStyle}>
                     <span style={scoreValueStyle}>{liveRiskScore.toFixed(1)}</span>
-                    <span style={scoreLabelStyle}>/10 faille</span>
+                    <span style={scoreLabelStyle}>/10 risk</span>
                   </div>
                 </div>
 
@@ -664,16 +664,16 @@ ${section.after}`,
 
                 <div style={liveCodingStyle}>
                   <div style={liveTerminalStyle}>
-                    <div style={livePanelHeaderStyle}>Chemin IBM Bob live</div>
+                    <div style={livePanelHeaderStyle}>Live IBM Bob path</div>
                     <div style={liveLogBodyStyle}>
                       {replayLogs.map((log, index) => (
                         <div key={`${log}-${index}`}>{log}</div>
                       ))}
-                      <div>[Live] Analyse toujours en cours, l'API finale consolide le résultat...</div>
+                      <div>[Live] Analysis still running, the final API response is consolidating results...</div>
                     </div>
                   </div>
                   <div style={liveEditorStyle}>
-                    <div style={livePanelHeaderStyle}>Recode en direct</div>
+                    <div style={livePanelHeaderStyle}>Live recode</div>
                     <pre style={liveCodeStyle}>
                       <code>{liveCode || ""}</code>
                     </pre>
@@ -685,20 +685,20 @@ ${section.after}`,
             {apiData ? (
               <div style={dashboardStyle}>
                 <div style={resultScoreBarStyle}>
-                  <span>Notation des failles IBM Bob</span>
+                  <span>IBM Bob vulnerability score</span>
                   <div style={headerGroupStyle}>
                     <strong>{(apiData.riskScore ?? liveRiskScore).toFixed(1)} / 10</strong>
                     <button onClick={downloadCorrectedBundle} style={downloadButtonStyle}>
                       <Download size={14} />
-                      Télécharger tous les correctifs
+                      Download all fixes
                     </button>
                   </div>
                 </div>
                 <nav style={tabsStyle}>
                   {[
-                    { id: "review", label: "Rubriques IBM Bob" },
+                    { id: "review", label: "IBM Bob sections" },
                     { id: "migration", label: "Migration" },
-                    { id: "controller", label: "Diff global" },
+                    { id: "controller", label: "Global diff" },
                     { id: "audit", label: "Audit log" },
                   ].map((tab) => (
                     <button
@@ -793,20 +793,20 @@ ${section.after}`,
                               onClick={() => openJourneyModal(selectedSection)}
                               style={quietButtonStyle}
                             >
-                              Chemin
+                              Path
                             </button>
                             <button
                               onClick={() => playCodingReplay(selectedSection)}
                               style={replayButtonStyle}
                             >
                               <Play size={15} fill="currentColor" />
-                              Voir IBM Bob coder
+                              Watch IBM Bob code
                             </button>
                             <button
                               onClick={() => openCodeModal(selectedSection)}
                               style={quietButtonStyle}
                             >
-                              Code corrigé
+                              Corrected code
                             </button>
                             <button
                               onClick={() => openDiffModal(selectedSection)}
@@ -819,37 +819,37 @@ ${section.after}`,
                               style={downloadPatchButtonStyle}
                             >
                               <Download size={15} />
-                              Télécharger ce fichier corrigé
+                              Download this corrected file
                             </button>
                           </div>
 
                           <div style={explainGridStyle}>
                             <div style={explainCardStyle}>
-                              <strong>Ce qu'IBM Bob a lu</strong>
+                              <strong>What IBM Bob read</strong>
                               <p>{selectedSection.summary}</p>
                             </div>
                             <div style={explainCardStyle}>
-                              <strong>Ce qui a été modifié</strong>
+                              <strong>What changed</strong>
                               <p>{selectedSection.changed}</p>
                             </div>
                             <div style={explainCardStyle}>
-                              <strong>Comment IBM Bob a vérifié</strong>
+                              <strong>How IBM Bob verified it</strong>
                               <p>{selectedSection.verified}</p>
                             </div>
                           </div>
 
                           <div style={previewCardStyle}>
                             <div>
-                              <strong>Correction prête</strong>
+                              <strong>Fix ready</strong>
                               <p>
-                                Le code complet est disponible dans la popup ou en téléchargement.
+                                The full code is available in the popup or as a download.
                               </p>
                             </div>
                             <button
                               onClick={() => openCodeModal(selectedSection)}
                               style={replayButtonStyle}
                             >
-                              Ouvrir le code
+                              Open code
                             </button>
                           </div>
                           </section>
@@ -860,8 +860,8 @@ ${section.after}`,
 
                   {activeTab === "migration" ? (
                     <div style={emptyPanelStyle}>
-                      <strong>Migration prête</strong>
-                      <p>Le schéma est disponible dans une popup pour garder l’écran léger.</p>
+                      <strong>Migration ready</strong>
+                      <p>The schema is available in a popup to keep the screen light.</p>
                       <button
                         onClick={() =>
                           setModal({
@@ -872,19 +872,19 @@ ${section.after}`,
                         }
                         style={replayButtonStyle}
                       >
-                        Ouvrir la migration
+                        Open migration
                       </button>
                     </div>
                   ) : null}
 
                   {activeTab === "controller" ? (
                     <div style={emptyPanelStyle}>
-                      <strong>Diff global prêt</strong>
-                      <p>Le diff complet est volontairement affiché en popup.</p>
+                      <strong>Global diff ready</strong>
+                      <p>The full diff is intentionally shown in a popup.</p>
                       <button
                         onClick={() =>
                           setModal({
-                            title: "Diff global",
+                            title: "Global diff",
                             mode: "diff",
                             content: apiData.oldCode,
                             secondaryContent: apiData.backendCode,
@@ -892,15 +892,15 @@ ${section.after}`,
                         }
                         style={replayButtonStyle}
                       >
-                        Ouvrir le diff
+                        Open diff
                       </button>
                     </div>
                   ) : null}
 
                   {activeTab === "audit" ? (
                     <div style={emptyPanelStyle}>
-                      <strong>Audit log prêt</strong>
-                      <p>Les logs complets sont consultables en popup ou téléchargeables.</p>
+                      <strong>Audit log ready</strong>
+                      <p>Full logs are available in a popup or as a download.</p>
                       <button
                         onClick={() =>
                           setModal({
@@ -911,7 +911,7 @@ ${section.after}`,
                         }
                         style={replayButtonStyle}
                       >
-                        Ouvrir les logs
+                        Open logs
                       </button>
                     </div>
                   ) : null}
@@ -941,7 +941,7 @@ ${section.after}`,
             <div style={modalHeaderStyle}>
               <strong>{modal.title}</strong>
               <button onClick={() => setModal(null)} style={modalCloseStyle}>
-                Fermer
+                Close
               </button>
             </div>
             {modal.mode === "diff" ? (
@@ -969,27 +969,27 @@ function buildClientReviewSections(apiData: BobApiData): ReviewSection[] {
   return [
     {
       id: "security",
-      title: "Injection et validation",
+      title: "Injection and validation",
       fileName: "codebase",
       summary: apiData.securityAudit,
       changed:
-        "Les entrées utilisateur sont validées avant l'accès aux données, puis les requêtes brutes sont remplacées par une couche paramétrée.",
+        "User inputs are validated before data access, then raw queries are replaced by a parameterized layer.",
       verified:
-        "IBM Bob vérifie que les payloads utilisateur ne sont plus concaténés dans les requêtes et que la sortie garde le même contrat métier.",
+        "IBM Bob verifies user payloads are no longer concatenated into queries and the output keeps the same business contract.",
       before: apiData.oldCode,
       after: apiData.backendCode,
     },
     {
       id: "database",
-      title: "Modèle de données",
+      title: "Data model",
       fileName: "schema.prisma",
       summary:
-        "La structure base de données est normalisée dans un schéma Prisma avec index, relations et contraintes.",
+        "The database structure is normalized into a Prisma schema with indexes, relations, and constraints.",
       changed:
-        "Les tables implicites deviennent des modèles typés avec index sur les champs de recherche et contraintes d'unicité.",
+        "Implicit tables become typed models with indexes on search fields and uniqueness constraints.",
       verified:
-        "IBM Bob contrôle que la migration garde les champs utiles au code legacy et prépare les accès sécurisés.",
-      before: "SQL brut dispersé dans les controllers legacy.",
+        "IBM Bob checks the migration keeps fields used by legacy code and prepares secure access.",
+      before: "Raw SQL scattered across legacy controllers.",
       after: apiData.migrationSql,
     },
   ];
