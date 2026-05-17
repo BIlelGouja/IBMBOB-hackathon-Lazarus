@@ -1,97 +1,97 @@
 # IBM Bob Hackathon - Lazarus
 
-Interface Next.js 14 pour auditer une base de code avec un workflow multi-agent inspire d'IBM Bob. L'app permet d'importer des fichiers ou un dossier complet, de lancer une analyse de securite, de visualiser le chemin de correction, puis de telecharger les fichiers corriges.
+Lazarus is a Next.js 14 interface for auditing a codebase through an IBM Bob-inspired multi-agent workflow. The app lets developers import files or full folders, launch a security analysis, follow the remediation path, inspect the generated fixes, and download corrected files.
 
 ## Vision
 
-Lazarus transforme une revue de code legacy en experience claire pour les developpeurs :
+Lazarus turns legacy code review into a clear developer experience:
 
-- importer une base de code multi-langage ;
-- comprendre ou sont les risques ;
-- voir IBM Bob analyser, corriger et verifier ;
-- obtenir une notation de faille de `0` a `10` ;
-- comparer l'ancien code et le code corrige ;
-- telecharger les correctifs et la preuve de session.
+- import a multi-language codebase;
+- understand where the risks are;
+- watch IBM Bob analyze, rewrite, and verify the code;
+- get a vulnerability score from `0` to `10`;
+- compare old code against corrected code;
+- download fixes and the audit session proof.
 
-L'objectif est de donner aux equipes backend un copilote d'audit lisible, utile en hackathon, en revue de Pull Request, en migration legacy ou en securisation rapide d'un service.
+The goal is to give backend teams a readable audit copilot for hackathons, Pull Request reviews, legacy migrations, and fast security hardening.
 
-## Ce que fait IBM Bob dans l'app
+## What IBM Bob Does In This App
 
-IBM Bob est simule comme un orchestrateur multi-agent. Chaque etape a un role precis :
+IBM Bob is represented as a multi-agent orchestrator. Each step has a clear responsibility:
 
 1. **Deep Context**  
-   Bob lit les fichiers importes, reconstruit l'arborescence et identifie l'intention du code.
+   Bob reads the imported files, rebuilds the codebase structure, and detects the intent behind the code.
 
 2. **Database Layer**  
-   Bob repere les acces aux bases de donnees, les requetes SQL, les modeles, les appels ORM et les dependances sensibles.
+   Bob tracks database access, SQL queries, ORM models, data flows, and sensitive dependencies.
 
 3. **Security Injection**  
-   Bob detecte les entrees non fiables, les injections SQL, les secrets exposes, les validations manquantes et les appels dangereux comme `eval`, `exec` ou les requetes concatenees.
+   Bob detects untrusted inputs, SQL injection risks, exposed secrets, missing validation, and dangerous calls such as `eval`, `exec`, or concatenated raw SQL.
 
 4. **Core Logic Translation**  
-   Bob propose une version corrigee du code : validation stricte, requetes parametrees, separation des responsabilites, typage, erreurs controlees et journalisation.
+   Bob proposes corrected code using strict validation, parameterized queries, cleaner responsibility boundaries, stronger typing, controlled errors, and audit logging.
 
 5. **Tests & Verify**  
-   Bob simule une verification : contrat de sortie conserve, payloads dangereux bloques, comportement attendu preserve.
+   Bob simulates verification by checking that dangerous payloads are blocked, expected behavior is preserved, and the output contract remains stable.
 
 6. **Final Audit**  
-   Bob produit un audit final, un score de risque, un diff consultable et une preuve de session telechargeable.
+   Bob produces the final audit, risk score, reviewable diff, and downloadable session log.
 
-## Fonctionnalites
+## Features
 
-- Import de fichiers seuls.
-- Import de dossiers complets.
-- Support multi-langage : JavaScript, TypeScript, Python, PHP, Ruby, Go, C#, Java, SQL et autres fichiers texte.
-- Analyse globale de la base de code.
-- Animation de workflow en direct.
-- Rubriques cliquables pour comprendre chaque correction.
-- Vue avant/apres du code.
-- Popups pour les contenus longs.
-- Telechargement d'un fichier corrige.
-- Telechargement de tous les correctifs.
-- Telechargement du journal d'audit `lazarus-audit.txt`.
-- Fallback local si l'API IBM Bob n'est pas disponible.
+- Import individual source files.
+- Import complete folders.
+- Multi-language support: JavaScript, TypeScript, Python, PHP, Ruby, Go, C#, Java, SQL, and other text-based code files.
+- Full codebase analysis.
+- Live workflow animation.
+- Clickable review sections for each correction.
+- Before/after code comparison.
+- Popups for large content.
+- Download one corrected file.
+- Download all corrected files.
+- Download the audit log as `lazarus-audit.txt`.
+- Local fallback mode when the IBM Bob API is unavailable.
 
-## Stack technique
+## Tech Stack
 
 - Next.js 14
 - React 18
 - TypeScript
 - App Router
-- Route Handler API : `app/api/bob/route.ts`
-- UI en CSS-in-JS dans `app/page.tsx`
-- Icons avec `lucide-react`
+- Route Handler API: `app/api/bob/route.ts`
+- CSS-in-JS UI inside `app/page.tsx`
+- Icons with `lucide-react`
 
-## Installation locale
+## Local Setup
 
 ```bash
 npm install
 npm run dev
 ```
 
-Puis ouvre :
+Then open:
 
 ```text
 http://127.0.0.1:3000
 ```
 
-## Variables d'environnement
+## Environment Variables
 
-Cree un fichier `.env.local` a la racine du projet :
+Create a `.env.local` file at the project root:
 
 ```env
-IBM_BOB_API_KEY=ta_cle_api_ici
+IBM_BOB_API_KEY=your_api_key_here
 IBM_BOB_API_URL=https://api.ibmbob.ai/v1/chat/completions
 IBM_BOB_MODEL=ibm-bob
 ```
 
-`IBM_BOB_API_KEY` ne doit jamais etre commit sur GitHub. Le fichier `.env.local` est ignore par Git.
+`IBM_BOB_API_KEY` must never be committed to GitHub. The `.env.local` file is ignored by Git.
 
-## Mode fallback
+## Fallback Mode
 
-Si la cle API est absente, si l'API repond avec une erreur, ou si la reponse prend plus de 8 secondes, l'app bascule automatiquement en mode fallback.
+If the API key is missing, if the API returns an error, or if the response takes more than 8 seconds, the app automatically switches to fallback mode.
 
-Le fallback renvoie toujours une reponse compatible avec le frontend :
+The fallback always returns a frontend-compatible response:
 
 - `securityAudit`
 - `migrationSql`
@@ -101,64 +101,64 @@ Le fallback renvoie toujours une reponse compatible avec le frontend :
 - `riskScore`
 - `reviewSections`
 
-Cela permet de garder une demo stable meme sans acces API.
+This keeps the demo stable even without API access.
 
-## Structure du projet
+## Project Structure
 
 ```text
 app/
   api/
     bob/
-      route.ts      # API Next.js, appel IBM Bob + fallback
-  globals.css       # styles globaux
-  layout.tsx        # layout racine
-  page.tsx          # interface client
+      route.ts      # Next.js API route, IBM Bob call + fallback
+  globals.css       # global styles
+  layout.tsx        # root layout
+  page.tsx          # client interface
 package.json
 tsconfig.json
 ```
 
-## Comment utiliser l'app
+## How To Use The App
 
-1. Lance l'application.
-2. Importe un ou plusieurs fichiers, ou un dossier complet.
-3. Clique sur **Analyze**.
-4. Suis le chemin IBM Bob en direct.
-5. Ouvre les rubriques pour voir :
-   - ce que Bob a lu ;
-   - ce qui a ete modifie ;
-   - comment Bob a verifie ;
-   - l'ancien code ;
-   - le code corrige.
-6. Telecharge les correctifs ou le journal d'audit.
+1. Start the application.
+2. Import one or more files, or a complete folder.
+3. Click **Analyze**.
+4. Follow the IBM Bob path live.
+5. Open review sections to see:
+   - what Bob read;
+   - what changed;
+   - how Bob verified the fix;
+   - the old code;
+   - the corrected code.
+6. Download the fixes or the audit log.
 
-## Pour les developpeurs
+## Why Developers Would Use It
 
-Cette app sert a accelerer :
+This app helps speed up:
 
-- les audits de code legacy ;
-- les revues de Pull Request ;
-- la detection de failles backend ;
-- la migration depuis du SQL brut vers une couche plus sure ;
-- la comprehension d'une base de code inconnue ;
-- la production d'un rapport lisible pour une equipe technique.
+- legacy code audits;
+- Pull Request reviews;
+- backend vulnerability discovery;
+- migration from raw SQL to safer data access patterns;
+- onboarding into an unknown codebase;
+- producing a clear technical report for a team.
 
-Elle ne remplace pas une revue humaine finale, mais elle donne une premiere passe structuree, actionnable et facile a presenter.
+It does not replace final human review, but it provides a structured, actionable first pass that is easy to understand and easy to present.
 
-## Deploiement gratuit sur Vercel
+## Free Deployment On Vercel
 
-1. Pousse le projet sur GitHub.
-2. Va sur [Vercel](https://vercel.com).
-3. Importe le repo GitHub.
-4. Ajoute les variables d'environnement :
+1. Push the project to GitHub.
+2. Go to [Vercel](https://vercel.com).
+3. Import the GitHub repository.
+4. Add the environment variables:
 
 ```env
-IBM_BOB_API_KEY=ta_cle_api_ici
+IBM_BOB_API_KEY=your_api_key_here
 IBM_BOB_API_URL=https://api.ibmbob.ai/v1/chat/completions
 IBM_BOB_MODEL=ibm-bob
 ```
 
-5. Clique sur **Deploy**.
+5. Click **Deploy**.
 
-## Licence
+## License
 
-Projet hackathon. A adapter selon les besoins de publication.
+Hackathon project. Adapt the license depending on how you plan to publish or reuse it.
