@@ -143,22 +143,3 @@ This app helps speed up:
 - producing a clear technical report for a team.
 
 It does not replace final human review, but it provides a structured, actionable first pass that is easy to understand and easy to present.
-
-## Free Deployment On Vercel
-
-1. Push the project to GitHub.
-2. Go to [Vercel](https://vercel.com).
-3. Import the GitHub repository.
-4. Add the environment variables:
-
-```env
-IBM_BOB_API_KEY=your_api_key_here
-IBM_BOB_API_URL=https://api.ibmbob.ai/v1/chat/completions
-IBM_BOB_MODEL=ibm-bob
-```
-
-5. Click **Deploy**.
-
-## License
-
-Hackathon project. Adapt the license depending on how you plan to publish or reuse it.
