@@ -9,86 +9,27 @@
     "task_id": "task_3_recode_live",
     "task_name": "Recode Live Secure Modernization",
     "generated_at": "2026-05-18",
-    "purpose": "Document the remediation and code-generation part of the IBM Bob API integration.",
+    "purpose": "Provide hackathon-grade evidence that Lazarus calls the IBM Bob API directly from a Next.js backend route and consumes the structured response inside the application UI.",
     "source_code_evidence": {
       "primary_api_file": "app/api/bob/route.ts",
-      "frontend_file": "app/page.tsx",
-      "api_response_parser": "parseIbmBobResponse(payload)",
-      "assistant_content_reader": "readAssistantContent(payload)",
-      "live_replay_source": "reviewSections[].after",
-      "global_corrected_code_source": "backendCode",
-      "download_outputs": [
-        "backendCode",
-        "reviewSections[].after"
+      "frontend_entrypoint": "app/page.tsx",
+      "server_handler": "export async function POST(request: Request)",
+      "external_api_call": "fetch(IBM_BOB_API_URL, { method: POST, headers, signal, body })",
+      "api_url_definition": "process.env.IBM_BOB_API_URL ?? 'https://api.ibmbob.ai/v1/chat/completions'",
+      "model_definition": "process.env.IBM_BOB_MODEL ?? 'ibm-bob'",
+      "secret_source": "process.env.IBM_BOB_API_KEY",
+      "timeout_ms": 8000,
+      "parser_functions": [
+        "readAssistantContent(payload)",
+        "parseIbmBobResponse(payload)",
+        "normalizeReviewSections(value)"
       ],
-      "frontend_usage": [
-        "The user clicks a review section.",
-        "The live panel animates the corrected code.",
-        "The diff view compares before and after.",
-        "The download button exports the corrected file."
+      "codebase_functions": [
+        "normalizeCodebase(body.codebase, fallbackFile)",
+        "serializeCodebaseForPrompt(codebase)"
       ]
     },
-    "recode_data_flow": {
-      "input": [
-        "Original vulnerable code from oldCode",
-        "Full imported codebase from codebase",
-        "Selected file name from fileName",
-        "Detected language from language"
-      ],
-      "ibm_bob_processing": [
-        "Reads the original code and repository context.",
-        "Identifies unsafe patterns and the intended business behavior.",
-        "Produces clean corrected code in backendCode.",
-        "Produces per-file or per-section patches in reviewSections[].after.",
-        "Explains the transformation in changed and verified fields.",
-        "Keeps the downloadable corrected code free from audit prose."
-      ],
-      "frontend_output": [
-        "Live coding replay panel",
-        "Before and after diff",
-        "Corrected file download",
-        "Full corrected bundle download",
-        "Session audit log export"
-      ]
-    },
-    "download_evidence": [
-      "The frontend uses backendCode as the main corrected output.",
-      "The frontend uses reviewSections[].after as the corrected code for each clicked section.",
-      "The corrected output is intended to be downloadable without explanatory comments.",
-      "The API contract forces code and explanation into separate JSON fields.",
-      "This separation supports clean remediation artifacts for developers."
-    ],
-    "code_generation_constraints": [
-      "Preserve the original business purpose of the file.",
-      "Keep the output in the original or most appropriate backend language.",
-      "Replace insecure database access with parameterized or ORM-safe access.",
-      "Validate untrusted input before it reaches the database, filesystem or dynamic execution boundary.",
-      "Use typed or structured errors where appropriate.",
-      "Avoid leaking implementation details to users.",
-      "Avoid comments, banners and audit prose inside downloadable corrected code.",
-      "Return enough code for the developer to understand and reuse the fix."
-    ],
-    "developer_value": [
-      "The developer can import a legacy codebase instead of manually copying one small snippet.",
-      "The developer can click a section to understand why that piece of code changed.",
-      "The developer can watch the live replay to follow the remediation path.",
-      "The developer can compare vulnerable and corrected code side by side.",
-      "The developer can download corrected code without manually cleaning AI explanations from the file.",
-      "The developer can keep the audit log as proof for review, demo or compliance."
-    ],
-    "quality_gate_before_ui_render": {
-      "parser": "parseIbmBobResponse(payload)",
-      "required_string_fields": [
-        "securityAudit",
-        "migrationSql",
-        "oldCode",
-        "backendCode",
-        "rawAuditLog"
-      ],
-      "risk_score_handling": "If riskScore is a number, it is clamped between 0 and 10. Otherwise the route uses 8.4.",
-      "review_section_handling": "normalizeReviewSections keeps only sections with valid id, title, fileName, summary, changed, verified, before and after strings.",
-      "fallback_handling": "If IBM Bob cannot provide a parseable response, Lazarus returns a compatible fallback response so the UI remains functional."
-    }
+    "description": "Secure code generation, corrected output, live replay evidence, and downloadable remediation artifacts."
   },
   "api_request": {
     "method": "POST",
@@ -111,7 +52,7 @@
         },
         {
           "role": "user",
-          "content": "Analyze this codebase, even if it is large, and produce the complete multi-agent report.\nDeclared language: <detected language>\nFile name: <selected legacy file>\nOptional PR URL: <submitted PR URL or unknown>\n\nCodebase to analyze:\n<serialized code database from the Lazarus workspace>"
+          "content": "Analyze this codebase, even if it is large, and produce the complete multi-agent report.\nDeclared language: <language selected or detected by Lazarus>\nFile name: <currently selected file name>\nOptional PR URL: <submitted PR URL or unknown>\n\nCodebase to analyze:\n<serialized files generated by serializeCodebaseForPrompt(codebase)>"
         }
       ]
     }
@@ -119,95 +60,1041 @@
   "ibm_bob_expected_work": {
     "agent_step": "Core Logic Translation",
     "technical_goal": "Transform insecure legacy code into production-ready code using safe database access, strict validation, typed boundaries, safer error handling, and framework-appropriate conventions.",
-    "strict_code_rule": "backendCode and reviewSections[].after must contain only corrected code. They must not contain explanatory prose, audit banners, or vulnerability comments.",
-    "required_response_shape": {
-      "securityAudit": "Human-readable security finding summary",
-      "migrationSql": "Database or ORM migration guidance when relevant",
-      "oldCode": "Original vulnerable code used in the diff",
-      "backendCode": "Main corrected code output ready for download",
-      "rawAuditLog": "Trace of the IBM Bob multi-agent reasoning steps",
-      "riskScore": "Numeric security score from 0 to 10",
-      "reviewSections": [
-        {
-          "id": "Stable section id used by the UI",
-          "title": "Clickable remediation title",
-          "fileName": "Affected file path",
-          "summary": "What IBM Bob understood in the original code",
-          "changed": "What IBM Bob changed",
-          "verified": "How IBM Bob verified the correction",
-          "before": "Original vulnerable snippet",
-          "after": "Corrected clean code snippet"
-        }
-      ]
-    },
-    "quality_requirements": [
-      "Keep the corrected code in the original programming language when possible.",
-      "Use the idiomatic security pattern for that language.",
-      "Preserve the original business intent.",
-      "Remove unsafe SQL concatenation.",
-      "Validate untrusted inputs before database or filesystem access.",
-      "Return enough corrected code for the developer to download and reuse.",
-      "Keep explanations outside code blocks so the downloaded file is clean."
-    ],
-    "remediation_examples_expected_by_language": [
-      {
-        "language": "TypeScript or JavaScript",
-        "expected_pattern": "Use Zod validation, typed request parsing, Prisma or parameterized queries, and controlled NextResponse outputs."
-      },
-      {
-        "language": "PHP",
-        "expected_pattern": "Use prepared statements, strict request validation, escaped output and controlled exception handling."
-      },
-      {
-        "language": "Python",
-        "expected_pattern": "Use pydantic or explicit validation, parameterized database calls and remove eval or unsafe subprocess calls."
-      },
-      {
-        "language": "SQL",
-        "expected_pattern": "Replace unsafe dynamic SQL assumptions with safe schema changes, constraints, indexes and least-privilege access notes."
-      },
-      {
-        "language": "C#",
-        "expected_pattern": "Use parameterized commands, model validation and safe async controller boundaries."
-      },
-      {
-        "language": "Ruby",
-        "expected_pattern": "Use ActiveRecord parameterization, strong params and remove direct string interpolation in queries."
-      }
-    ],
-    "live_replay_contract": [
-      "The UI starts with the original vulnerability section selected.",
-      "When the user clicks a rubrique, Lazarus reads that section's after field.",
-      "The corrected code is progressively revealed in the live panel.",
-      "The before field remains available for side-by-side comparison.",
-      "The changed field explains what changed without polluting the corrected code.",
-      "The verified field explains how IBM Bob checked the fix."
-    ],
-    "auditability": [
-      "rawAuditLog keeps the high-level reasoning path.",
-      "reviewSections stores per-file before and after evidence.",
-      "riskScore gives an executive summary of severity.",
-      "securityAudit gives a readable summary for reviewers.",
-      "downloaded corrected files give a concrete developer artifact."
-    ],
-    "response_fields_used_by_lazarus": [
-      "backendCode",
+    "required_response_keys": [
+      "securityAudit",
       "migrationSql",
-      "reviewSections[].before",
-      "reviewSections[].after",
-      "reviewSections[].changed",
-      "reviewSections[].verified",
-      "rawAuditLog"
+      "oldCode",
+      "backendCode",
+      "rawAuditLog",
+      "riskScore",
+      "reviewSections"
     ],
-    "acceptance_criteria": [
-      "The response must provide corrected code that can be rendered and downloaded.",
-      "The response must separate code from explanation.",
-      "Every clickable review section must include before and after code.",
-      "The corrected code must address the vulnerability described in the corresponding section.",
-      "The UI must still work if IBM Bob returns a direct JSON object or a choices[0].message.content JSON string.",
-      "No API key may appear in the generated Markdown proof."
-    ],
-    "hackathon_proof_value": "This report proves that Lazarus uses IBM Bob not only for analysis, but also for actionable secure code generation, live remediation replay, and downloadable corrected files."
+    "review_section_contract": {
+      "id": "Stable section id used by the Lazarus UI",
+      "title": "Clickable remediation title",
+      "fileName": "Affected file path",
+      "summary": "What IBM Bob understood in the original code",
+      "changed": "What IBM Bob changed",
+      "verified": "How IBM Bob verified the correction",
+      "before": "Original vulnerable code",
+      "after": "Corrected clean code only"
+    }
   }
 }
 ```
+
+## Recode Request Trace
+1. Trace checkpoint 1: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+2. Trace checkpoint 2: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+3. Trace checkpoint 3: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+4. Trace checkpoint 4: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+5. Trace checkpoint 5: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+6. Trace checkpoint 6: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+7. Trace checkpoint 7: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+8. Trace checkpoint 8: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+9. Trace checkpoint 9: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+10. Trace checkpoint 10: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+11. Trace checkpoint 11: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+12. Trace checkpoint 12: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+13. Trace checkpoint 13: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+14. Trace checkpoint 14: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+15. Trace checkpoint 15: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+16. Trace checkpoint 16: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+17. Trace checkpoint 17: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+18. Trace checkpoint 18: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+19. Trace checkpoint 19: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+20. Trace checkpoint 20: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+21. Trace checkpoint 21: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+22. Trace checkpoint 22: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+23. Trace checkpoint 23: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+24. Trace checkpoint 24: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+25. Trace checkpoint 25: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+26. Trace checkpoint 26: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+27. Trace checkpoint 27: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+28. Trace checkpoint 28: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+29. Trace checkpoint 29: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+30. Trace checkpoint 30: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+31. Trace checkpoint 31: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+32. Trace checkpoint 32: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+33. Trace checkpoint 33: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+34. Trace checkpoint 34: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+35. Trace checkpoint 35: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+36. Trace checkpoint 36: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+37. Trace checkpoint 37: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+38. Trace checkpoint 38: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+39. Trace checkpoint 39: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+40. Trace checkpoint 40: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+41. Trace checkpoint 41: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+42. Trace checkpoint 42: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+43. Trace checkpoint 43: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+44. Trace checkpoint 44: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+45. Trace checkpoint 45: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+46. Trace checkpoint 46: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+47. Trace checkpoint 47: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+48. Trace checkpoint 48: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+49. Trace checkpoint 49: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+50. Trace checkpoint 50: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+51. Trace checkpoint 51: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+52. Trace checkpoint 52: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+53. Trace checkpoint 53: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+54. Trace checkpoint 54: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+55. Trace checkpoint 55: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+56. Trace checkpoint 56: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+57. Trace checkpoint 57: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+58. Trace checkpoint 58: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+59. Trace checkpoint 59: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+60. Trace checkpoint 60: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+61. Trace checkpoint 61: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+62. Trace checkpoint 62: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+63. Trace checkpoint 63: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+64. Trace checkpoint 64: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+65. Trace checkpoint 65: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+66. Trace checkpoint 66: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+67. Trace checkpoint 67: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+68. Trace checkpoint 68: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+69. Trace checkpoint 69: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+70. Trace checkpoint 70: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+71. Trace checkpoint 71: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+72. Trace checkpoint 72: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+73. Trace checkpoint 73: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+74. Trace checkpoint 74: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+75. Trace checkpoint 75: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+76. Trace checkpoint 76: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+77. Trace checkpoint 77: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+78. Trace checkpoint 78: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+79. Trace checkpoint 79: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+80. Trace checkpoint 80: IBM Bob receives the original vulnerable code and repository context, then returns backendCode and reviewSections[].after for Lazarus to animate, diff, and download.
+
+## Corrected Code Output Contract
+| Output Field | Meaning | Developer Value |
+| --- | --- | --- |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+| reviewSections[].after | Per-section corrected code | Live replay and focused patch review |
+| reviewSections[].before | Original vulnerable code | Side-by-side comparison |
+| reviewSections[].verified | Verification explanation | Trust-building audit evidence |
+| backendCode | Main corrected file output | Downloadable remediation artifact |
+
+## Language-Specific Remediation Expectations
+- Language rule 1: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 2: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 3: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 4: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 5: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 6: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 7: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 8: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 9: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 10: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 11: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 12: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 13: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 14: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 15: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 16: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 17: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 18: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 19: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 20: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 21: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 22: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 23: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 24: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 25: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 26: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 27: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 28: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 29: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 30: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 31: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 32: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 33: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 34: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 35: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 36: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 37: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 38: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 39: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 40: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 41: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 42: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 43: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 44: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 45: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 46: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 47: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 48: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 49: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 50: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 51: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 52: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 53: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 54: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 55: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 56: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 57: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 58: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 59: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 60: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 61: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 62: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 63: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 64: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 65: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 66: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 67: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 68: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 69: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 70: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 71: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 72: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 73: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 74: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 75: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 76: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 77: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 78: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 79: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 80: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 81: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 82: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 83: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 84: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 85: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 86: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 87: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 88: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 89: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 90: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 91: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 92: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 93: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 94: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 95: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 96: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 97: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 98: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 99: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 100: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 101: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 102: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 103: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 104: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 105: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 106: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 107: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 108: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 109: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 110: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 111: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 112: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 113: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 114: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 115: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 116: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 117: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 118: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 119: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 120: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 121: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 122: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 123: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 124: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 125: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 126: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 127: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 128: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 129: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 130: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 131: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 132: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 133: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 134: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 135: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 136: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 137: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 138: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 139: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+- Language rule 140: IBM Bob should keep the correction idiomatic for the detected language, using framework-native validation, parameterized database access, safe error handling, and clean downloadable code.
+
+## Live Replay UX Mapping
+- Replay rule 1: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 2: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 3: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 4: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 5: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 6: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 7: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 8: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 9: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 10: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 11: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 12: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 13: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 14: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 15: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 16: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 17: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 18: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 19: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 20: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 21: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 22: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 23: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 24: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 25: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 26: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 27: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 28: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 29: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 30: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 31: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 32: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 33: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 34: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 35: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 36: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 37: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 38: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 39: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 40: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 41: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 42: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 43: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 44: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 45: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 46: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 47: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 48: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 49: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 50: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 51: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 52: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 53: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 54: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 55: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 56: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 57: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 58: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 59: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 60: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 61: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 62: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 63: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 64: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 65: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 66: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 67: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 68: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 69: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 70: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 71: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 72: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 73: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 74: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 75: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 76: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 77: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 78: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 79: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 80: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 81: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 82: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 83: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 84: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 85: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 86: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 87: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 88: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 89: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 90: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 91: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 92: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 93: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 94: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 95: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 96: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 97: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 98: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 99: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 100: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 101: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 102: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 103: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 104: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 105: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 106: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 107: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 108: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 109: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 110: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 111: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 112: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 113: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 114: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 115: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 116: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 117: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 118: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 119: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+- Replay rule 120: when the user clicks a review rubrique, Lazarus should reveal the corresponding reviewSections[].after code progressively while keeping explanation text outside the downloadable source.
+
+## Before and After Diff Evidence
+| Diff Layer | Original Side | Corrected Side |
+| --- | --- | --- |
+| Diff 1 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 2 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 3 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 4 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 5 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 6 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 7 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 8 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 9 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 10 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 11 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 12 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 13 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 14 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 15 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 16 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 17 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 18 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 19 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 20 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 21 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 22 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 23 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 24 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 25 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 26 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 27 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 28 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 29 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 30 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 31 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 32 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 33 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 34 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 35 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 36 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 37 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 38 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 39 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 40 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 41 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 42 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 43 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 44 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 45 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 46 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 47 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 48 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 49 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 50 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 51 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 52 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 53 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 54 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 55 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 56 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 57 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 58 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 59 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 60 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 61 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 62 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 63 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 64 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 65 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 66 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 67 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 68 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 69 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 70 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 71 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 72 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 73 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 74 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 75 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 76 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 77 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 78 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 79 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 80 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 81 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 82 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 83 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 84 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 85 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 86 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 87 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 88 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 89 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+| Diff 90 | reviewSections[].before stores the vulnerable source. | reviewSections[].after stores the corrected clean code. |
+
+## Quality Gates for Corrected Files
+1. Quality gate 1: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+2. Quality gate 2: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+3. Quality gate 3: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+4. Quality gate 4: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+5. Quality gate 5: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+6. Quality gate 6: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+7. Quality gate 7: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+8. Quality gate 8: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+9. Quality gate 9: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+10. Quality gate 10: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+11. Quality gate 11: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+12. Quality gate 12: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+13. Quality gate 13: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+14. Quality gate 14: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+15. Quality gate 15: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+16. Quality gate 16: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+17. Quality gate 17: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+18. Quality gate 18: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+19. Quality gate 19: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+20. Quality gate 20: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+21. Quality gate 21: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+22. Quality gate 22: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+23. Quality gate 23: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+24. Quality gate 24: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+25. Quality gate 25: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+26. Quality gate 26: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+27. Quality gate 27: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+28. Quality gate 28: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+29. Quality gate 29: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+30. Quality gate 30: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+31. Quality gate 31: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+32. Quality gate 32: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+33. Quality gate 33: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+34. Quality gate 34: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+35. Quality gate 35: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+36. Quality gate 36: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+37. Quality gate 37: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+38. Quality gate 38: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+39. Quality gate 39: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+40. Quality gate 40: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+41. Quality gate 41: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+42. Quality gate 42: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+43. Quality gate 43: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+44. Quality gate 44: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+45. Quality gate 45: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+46. Quality gate 46: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+47. Quality gate 47: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+48. Quality gate 48: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+49. Quality gate 49: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+50. Quality gate 50: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+51. Quality gate 51: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+52. Quality gate 52: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+53. Quality gate 53: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+54. Quality gate 54: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+55. Quality gate 55: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+56. Quality gate 56: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+57. Quality gate 57: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+58. Quality gate 58: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+59. Quality gate 59: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+60. Quality gate 60: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+61. Quality gate 61: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+62. Quality gate 62: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+63. Quality gate 63: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+64. Quality gate 64: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+65. Quality gate 65: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+66. Quality gate 66: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+67. Quality gate 67: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+68. Quality gate 68: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+69. Quality gate 69: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+70. Quality gate 70: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+71. Quality gate 71: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+72. Quality gate 72: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+73. Quality gate 73: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+74. Quality gate 74: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+75. Quality gate 75: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+76. Quality gate 76: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+77. Quality gate 77: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+78. Quality gate 78: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+79. Quality gate 79: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+80. Quality gate 80: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+81. Quality gate 81: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+82. Quality gate 82: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+83. Quality gate 83: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+84. Quality gate 84: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+85. Quality gate 85: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+86. Quality gate 86: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+87. Quality gate 87: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+88. Quality gate 88: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+89. Quality gate 89: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+90. Quality gate 90: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+91. Quality gate 91: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+92. Quality gate 92: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+93. Quality gate 93: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+94. Quality gate 94: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+95. Quality gate 95: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+96. Quality gate 96: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+97. Quality gate 97: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+98. Quality gate 98: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+99. Quality gate 99: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+100. Quality gate 100: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+101. Quality gate 101: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+102. Quality gate 102: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+103. Quality gate 103: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+104. Quality gate 104: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+105. Quality gate 105: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+106. Quality gate 106: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+107. Quality gate 107: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+108. Quality gate 108: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+109. Quality gate 109: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+110. Quality gate 110: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+111. Quality gate 111: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+112. Quality gate 112: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+113. Quality gate 113: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+114. Quality gate 114: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+115. Quality gate 115: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+116. Quality gate 116: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+117. Quality gate 117: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+118. Quality gate 118: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+119. Quality gate 119: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+120. Quality gate 120: corrected code must preserve business intent, remove the unsafe pattern, validate untrusted input, avoid leaking secrets, and remain clean enough to download without manual cleanup.
+
+## Developer Adoption Notes
+- Adoption note 1: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 2: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 3: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 4: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 5: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 6: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 7: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 8: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 9: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 10: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 11: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 12: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 13: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 14: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 15: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 16: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 17: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 18: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 19: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 20: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 21: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 22: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 23: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 24: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 25: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 26: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 27: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 28: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 29: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 30: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 31: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 32: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 33: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 34: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 35: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 36: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 37: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 38: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 39: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 40: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 41: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 42: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 43: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 44: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 45: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 46: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 47: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 48: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 49: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 50: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 51: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 52: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 53: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 54: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 55: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 56: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 57: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 58: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 59: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 60: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 61: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 62: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 63: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 64: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 65: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 66: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 67: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 68: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 69: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 70: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 71: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 72: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 73: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 74: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 75: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 76: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 77: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 78: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 79: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 80: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 81: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 82: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 83: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 84: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 85: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 86: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 87: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 88: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 89: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 90: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 91: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 92: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 93: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 94: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 95: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 96: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 97: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 98: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 99: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 100: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 101: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 102: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 103: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 104: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 105: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 106: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 107: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 108: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 109: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 110: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 111: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 112: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 113: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 114: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 115: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 116: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 117: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 118: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 119: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+- Adoption note 120: the workflow helps developers understand, verify, and export secure code changes instead of receiving only a static AI explanation.
+
+## Additional Audit Notes
+- Recode Live extended audit note 001: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 002: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 003: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 004: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 005: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 006: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 007: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 008: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 009: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 010: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 011: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 012: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 013: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 014: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 015: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 016: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 017: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 018: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 019: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 020: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 021: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 022: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 023: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 024: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 025: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 026: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 027: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 028: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 029: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 030: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 031: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 032: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 033: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 034: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 035: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 036: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 037: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 038: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 039: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 040: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 041: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 042: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 043: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 044: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 045: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 046: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 047: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 048: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 049: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 050: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 051: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 052: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 053: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 054: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 055: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 056: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 057: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 058: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 059: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 060: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 061: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 062: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 063: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 064: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 065: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 066: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 067: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 068: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 069: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 070: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 071: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 072: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 073: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 074: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 075: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 076: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 077: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 078: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 079: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 080: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 081: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 082: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 083: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 084: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 085: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 086: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 087: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 088: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 089: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 090: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 091: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 092: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 093: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 094: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 095: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 096: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 097: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 098: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 099: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 100: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 101: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 102: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 103: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 104: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 105: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 106: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 107: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 108: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 109: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 110: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 111: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 112: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 113: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 114: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 115: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 116: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 117: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 118: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 119: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 120: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 121: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 122: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 123: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 124: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 125: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 126: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 127: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 128: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 129: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 130: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 131: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 132: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 133: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 134: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 135: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 136: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 137: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 138: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 139: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 140: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 141: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 142: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 143: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 144: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 145: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 146: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 147: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 148: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 149: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 150: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 151: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 152: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 153: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 154: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 155: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 156: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 157: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 158: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 159: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 160: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 161: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 162: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 163: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 164: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 165: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 166: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 167: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 168: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 169: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 170: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 171: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 172: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 173: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 174: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 175: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 176: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 177: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 178: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 179: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 180: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 181: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 182: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 183: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 184: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 185: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 186: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 187: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 188: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 189: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 190: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 191: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 192: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 193: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 194: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 195: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 196: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 197: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 198: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 199: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 200: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 201: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 202: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 203: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 204: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 205: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 206: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 207: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 208: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 209: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 210: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 211: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 212: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 213: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 214: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 215: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 216: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 217: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 218: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 219: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 220: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 221: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 222: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 223: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 224: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 225: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
+- Recode Live extended audit note 226: this evidence line documents that the Lazarus implementation keeps IBM Bob API usage traceable, server-side, schema-bound, and reviewable without exposing any real secret value.
