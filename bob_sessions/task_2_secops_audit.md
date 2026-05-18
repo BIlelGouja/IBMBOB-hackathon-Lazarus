@@ -37,6 +37,75 @@
       "Weak error handling",
       "Missing audit trail",
       "Unsafe controller/database coupling"
+    ],
+    "secops_data_flow": [
+      "The frontend submits the selected vulnerable file plus the full codebase to /api/bob.",
+      "The server prompt explicitly asks IBM Bob to detect vulnerabilities across multiple backend languages.",
+      "IBM Bob is instructed to return securityAudit, riskScore and reviewSections in JSON.",
+      "parseIbmBobResponse validates that the critical string fields exist before returning the response.",
+      "riskScore is clamped to the safe 0 to 10 display range.",
+      "The Lazarus UI renders the score, audit text and per-section explanations.",
+      "Each review section contains before, after, summary, changed and verified fields for evidence."
+    ],
+    "threat_model_used_for_this_task": {
+      "attacker_inputs": [
+        "HTTP query parameters",
+        "HTTP request bodies",
+        "Uploaded or pasted source code",
+        "User-controlled identifiers",
+        "User-controlled search filters",
+        "Environment-dependent values used without validation"
+      ],
+      "assets_at_risk": [
+        "Database records",
+        "Customer or user data",
+        "Backend credentials",
+        "Application integrity",
+        "Auditability of security-sensitive changes",
+        "Availability of the analysis workflow"
+      ],
+      "primary_risks": [
+        "SQL injection",
+        "Remote code execution through dynamic evaluation",
+        "Unauthorized data access",
+        "Incorrect trust boundary between controller and database layer",
+        "Broken validation and uncontrolled error leakage",
+        "Unsafe generated code if remediation comments are mixed into downloadable code"
+      ]
+    },
+    "security_controls_requested_from_bob": [
+      {
+        "control": "Input validation",
+        "expected_output": "A clear recommendation and corrected code using Zod or the language-equivalent validation layer.",
+        "lazarus_display_location": "securityAudit and reviewSections[].changed"
+      },
+      {
+        "control": "Parameterized database access",
+        "expected_output": "Replacement of raw SQL string concatenation with safe query parameters, ORM filters, prepared statements or equivalent.",
+        "lazarus_display_location": "reviewSections[].after and backendCode"
+      },
+      {
+        "control": "Safe execution boundaries",
+        "expected_output": "Removal or containment of eval-like behavior, command execution and dynamic code paths.",
+        "lazarus_display_location": "reviewSections[].summary and reviewSections[].verified"
+      },
+      {
+        "control": "Audit trace",
+        "expected_output": "rawAuditLog explaining the multi-agent review path and the verification outcome.",
+        "lazarus_display_location": "Downloadable session proof and audit log view"
+      },
+      {
+        "control": "Risk scoring",
+        "expected_output": "A numeric riskScore from 0 to 10, where 10 is critical.",
+        "lazarus_display_location": "Top-level dashboard score"
+      }
+    ],
+    "evidence_preservation": [
+      "The report keeps the exact API endpoint reference used by the code.",
+      "The report keeps the exact required response keys used by the frontend.",
+      "The report records the fallback behavior without hiding the real API path.",
+      "The report uses placeholders for secrets instead of exposing any real token.",
+      "The Bobalytics screenshot in bob_sessions/bobalytics_api_proof.png complements this Markdown proof with usage analytics."
     ]
   },
   "api_request": {
@@ -90,6 +159,40 @@
         "expected_fix": "Return rawAuditLog and verified reviewSections for traceable remediation."
       }
     ],
+    "severity_rubric": [
+      {
+        "score_range": "0-2",
+        "meaning": "Informational or low-impact maintainability issue."
+      },
+      {
+        "score_range": "3-5",
+        "meaning": "Moderate security issue requiring remediation before production."
+      },
+      {
+        "score_range": "6-8",
+        "meaning": "High-risk vulnerability such as unsafe query construction or weak validation on sensitive paths."
+      },
+      {
+        "score_range": "9-10",
+        "meaning": "Critical exploit path such as direct SQL injection, arbitrary command execution or severe data exposure."
+      }
+    ],
+    "expected_review_section_contract": {
+      "id": "Stable identifier used by the UI to select a vulnerability section",
+      "title": "Human-readable title such as User input hardening or Database query isolation",
+      "fileName": "File path where the issue was found",
+      "summary": "What IBM Bob found in the original file",
+      "changed": "What IBM Bob changed to reduce the risk",
+      "verified": "How IBM Bob reasoned that the correction preserves behavior and improves safety",
+      "before": "Original vulnerable code",
+      "after": "Corrected code only"
+    },
+    "false_positive_controls": [
+      "The prompt asks IBM Bob to read every provided file before proposing corrections.",
+      "The prompt asks for verified explanations, not only generic security advice.",
+      "The response schema separates before and after code so reviewers can compare the actual change.",
+      "The fallback uses the same response schema, which allows UI validation even when the external API is unavailable."
+    ],
     "response_fields_used_by_lazarus": [
       "securityAudit",
       "riskScore",
@@ -97,6 +200,13 @@
       "reviewSections[].summary",
       "reviewSections[].changed",
       "reviewSections[].verified"
+    ],
+    "acceptance_criteria": [
+      "The report must show that the IBM Bob API is called server-side.",
+      "The report must show that the API request asks for security analysis across several languages.",
+      "The report must show that riskScore is part of the required JSON contract.",
+      "The report must show that the response is transformed into user-visible audit sections.",
+      "The report must not contain any real API key or bearer token."
     ],
     "hackathon_proof_value": "This report demonstrates how Lazarus turns an IBM Bob API response into a security dashboard with risk scoring and per-file explanations."
   }

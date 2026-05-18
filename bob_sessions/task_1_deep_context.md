@@ -36,6 +36,90 @@
       "serializeCodebaseForPrompt(codebase) turns the imported repository into a prompt-safe text representation.",
       "The server route sends the serialized codebase to IBM Bob through the chat completions endpoint.",
       "IBM Bob returns a structured JSON response that Lazarus uses to build the review dashboard."
+    ],
+    "implementation_traceability": [
+      {
+        "step": "Client-side workspace construction",
+        "file": "app/page.tsx",
+        "evidence": "The Lazarus UI keeps imported files in the codebase state and sends them to /api/bob with oldCode, language and fileName.",
+        "why_it_matters": "This proves IBM Bob receives more than a single pasted snippet. It receives a workspace-like representation of the user's code database."
+      },
+      {
+        "step": "Server-side API boundary",
+        "file": "app/api/bob/route.ts",
+        "evidence": "The POST handler parses request.json(), extracts prUrl, oldCode, language, fileName and codebase, then builds the IBM Bob request.",
+        "why_it_matters": "The IBM Bob key stays server-side and the browser never receives the secret."
+      },
+      {
+        "step": "Codebase normalization",
+        "file": "app/api/bob/route.ts",
+        "evidence": "normalizeCodebase accepts an array of CodebaseFile objects and falls back to the selected file when the array is missing.",
+        "why_it_matters": "The API flow remains stable whether the user imports a full folder or analyzes one file."
+      },
+      {
+        "step": "Prompt serialization",
+        "file": "app/api/bob/route.ts",
+        "evidence": "serializeCodebaseForPrompt emits FILE blocks with file name, language and fenced source code.",
+        "why_it_matters": "IBM Bob can distinguish multiple files and understand which language and path each code block belongs to."
+      },
+      {
+        "step": "IBM Bob request dispatch",
+        "file": "app/api/bob/route.ts",
+        "evidence": "fetch(IBM_BOB_API_URL, ...) sends model, temperature, response_format and messages to the IBM Bob chat completions endpoint.",
+        "why_it_matters": "This is the concrete API usage that replaces manual chat usage in the Bob interface."
+      }
+    ],
+    "codebase_payload_contract": {
+      "codebase_item_shape": {
+        "id": "Optional stable UI id",
+        "name": "File name or path displayed in Lazarus",
+        "language": "Detected or user-selected programming language",
+        "code": "Raw source code content sent to IBM Bob"
+      },
+      "fallback_behavior": "If codebase is empty, the backend creates one file from oldCode, language and fileName.",
+      "serialized_prompt_format": "--- FILE 1: <file name>\\nLanguage: <language>\\n```\\n<source code>\\n```",
+      "supported_language_intent": [
+        "JavaScript",
+        "TypeScript",
+        "Python",
+        "Java",
+        "PHP",
+        "Ruby",
+        "Go",
+        "C#",
+        "SQL",
+        "Shell",
+        "Any backend language supported by the submitted codebase"
+      ]
+    },
+    "operational_controls": [
+      {
+        "control": "Server-only secret access",
+        "implementation": "process.env.IBM_BOB_API_KEY is read in app/api/bob/route.ts only.",
+        "benefit": "The API key is never embedded in page.tsx, never shipped to the client bundle, and never appears in the session proof files."
+      },
+      {
+        "control": "Timeout",
+        "implementation": "AbortController cancels the request after 8000 ms.",
+        "benefit": "The app remains responsive during hackathon demos even if the external API is slow."
+      },
+      {
+        "control": "Schema stability",
+        "implementation": "Both real IBM Bob and fallback responses use the same top-level response keys.",
+        "benefit": "The frontend dashboard does not crash if the external service is unavailable."
+      },
+      {
+        "control": "Deterministic output request",
+        "implementation": "temperature is set to 0.2 and response_format requests a JSON object.",
+        "benefit": "The returned data is easier to parse and display consistently."
+      }
+    ],
+    "manual_verification_checklist": [
+      "Open app/api/bob/route.ts and confirm IBM_BOB_API_URL is the external IBM Bob chat completions endpoint.",
+      "Confirm the Authorization header is built from process.env.IBM_BOB_API_KEY.",
+      "Confirm the frontend calls only /api/bob and never calls the IBM endpoint directly.",
+      "Confirm the user message contains Declared language, File name, Optional PR URL and serialized Codebase to analyze.",
+      "Confirm the response is parsed through parseIbmBobResponse before being returned to the UI."
     ]
   },
   "api_request": {
@@ -81,11 +165,40 @@
       "Prepare reviewSections so Lazarus can show a clickable review map.",
       "Produce rawAuditLog so the session can be exported as proof."
     ],
+    "multi_agent_mapping": [
+      {
+        "lazarus_stage": "Deep Context",
+        "bob_responsibility": "Read every file, detect language, infer repository architecture and summarize the active code paths."
+      },
+      {
+        "lazarus_stage": "Database Layer",
+        "bob_responsibility": "Identify database calls, raw SQL, ORM usage, migrations, schema assumptions and dependency boundaries."
+      },
+      {
+        "lazarus_stage": "Security Injection",
+        "bob_responsibility": "Mark unsafe inputs and prepare the findings consumed by the SecOps report."
+      },
+      {
+        "lazarus_stage": "Core Logic Translation",
+        "bob_responsibility": "Prepare a rewrite plan that keeps business intent while replacing risky patterns."
+      },
+      {
+        "lazarus_stage": "Final Audit",
+        "bob_responsibility": "Return rawAuditLog and reviewSections so the session can be inspected and downloaded."
+      }
+    ],
     "response_fields_used_by_lazarus": [
       "oldCode",
       "rawAuditLog",
       "reviewSections",
       "riskScore"
+    ],
+    "acceptance_criteria": [
+      "IBM Bob receives a complete representation of the imported files, not just a single line of code.",
+      "The request contains enough metadata to identify file names, languages and optional PR context.",
+      "The response must be valid JSON so the dashboard can render without custom text parsing.",
+      "The response must include reviewSections because Lazarus uses them to create the clickable audit map.",
+      "The response must include rawAuditLog because the hackathon submission requires proof of session activity."
     ],
     "hackathon_proof_value": "This report shows the exact request shape used to give IBM Bob repository-level context from the Lazarus application."
   }
